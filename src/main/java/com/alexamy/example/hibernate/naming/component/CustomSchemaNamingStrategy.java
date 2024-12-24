@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  * see https://stackoverflow.com/questions/61760869/spring-jpa-providing-schema-name-dynamically
  *
  */
-//@Component
+@Component
 @Slf4j
 public class CustomSchemaNamingStrategy extends CamelCaseToUnderscoresNamingStrategy implements ApplicationContextAware {
 

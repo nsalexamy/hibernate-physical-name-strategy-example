@@ -19,7 +19,7 @@ spring:
 app:
   datasource:
     books:
-      schema: ${PHARMANET_DB_SCHEMA:decision_support}
+      schema: ${BOOKS_SCHEMA:book_store}
 
 
 

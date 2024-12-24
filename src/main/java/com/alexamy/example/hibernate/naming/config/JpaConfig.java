@@ -18,11 +18,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 import java.util.Properties;
 
-@Configuration
-@EnableJpaRepositories(basePackages = "com.alexamy.example.hibernate.naming.domain.repository"
-        , entityManagerFactoryRef = JpaConfig.ENTITY_MANAGER_FACTORY
-        , transactionManagerRef = JpaConfig.TRANSACTION_MANAGER)
-@EnableTransactionManagement(proxyTargetClass = true)
+//@Configuration
+//@EnableJpaRepositories(basePackages = "com.alexamy.example.hibernate.naming.domain.repository"
+//        , entityManagerFactoryRef = JpaConfig.ENTITY_MANAGER_FACTORY
+//        , transactionManagerRef = JpaConfig.TRANSACTION_MANAGER)
+//@EnableTransactionManagement(proxyTargetClass = true)
 @Slf4j
 public class JpaConfig {
 
