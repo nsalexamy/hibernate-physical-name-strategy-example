@@ -18,7 +18,7 @@ spring:
 
 app:
   datasource:
-    pharmanet:
+    books:
       schema: ${PHARMANET_DB_SCHEMA:decision_support}
 
 
