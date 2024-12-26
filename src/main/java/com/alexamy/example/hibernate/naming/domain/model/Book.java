@@ -5,7 +5,9 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 // set the schema name to "books"
-@Table(name = "books")
+@Table(
+        schema = "${app.datasource.book-db.schema}",
+        name = "${app.datasource.book-db.table.books}")
 @Entity
 public class Book {
     @Id

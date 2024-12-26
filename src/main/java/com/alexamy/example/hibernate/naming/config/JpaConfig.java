@@ -26,12 +26,12 @@ import java.util.Properties;
 @Slf4j
 public class JpaConfig {
 
-    public static final String ENTITY_MANAGER_FACTORY = "pharmanetEntityManagerFactory";
-    public static final String TRANSACTION_MANAGER = "pharmanetTransactionManager";
+    public static final String ENTITY_MANAGER_FACTORY = "booksEntityManagerFactory";
+    public static final String TRANSACTION_MANAGER = "booksTransactionManager";
 
     @Bean(ENTITY_MANAGER_FACTORY)
     @Primary
-    public LocalContainerEntityManagerFactoryBean pharmanetEntityManagerFactory(
+    public LocalContainerEntityManagerFactoryBean booksEntityManagerFactory(
 //            CamelCaseToUnderscoresNamingStrategy customSchemaNamePhysicalNamingStrategy,
             DataSource dataSource) {
 

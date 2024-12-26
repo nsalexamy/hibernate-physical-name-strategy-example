@@ -1,0 +1,9 @@
+= Hibernete Phyical Naming Strategy Example
+
+== Overview
+
+Branches:
+
+- main
+- custom-app-yaml
+- custom-jpa-config
