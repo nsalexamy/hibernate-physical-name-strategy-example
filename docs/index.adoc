@@ -1,0 +1,275 @@
+= Spring JPA - Using Property Placeholders for Entity Mapping
+
+:imagesdir: images
+
+image::spring-jpa-property-placeholders.png[]
+
+== Introduction
+
+In this guide, you will learn how to use property placeholders for entity mapping in Spring JPA.
+
+Here is a sample entity class:
+
+.Book.java
+[source,java]
+----
+@Table(
+        schema = "${app.datasource.book-db.schema}",
+        name = "${app.datasource.book-db.table.books}")
+@Entity
+public class Book {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // other fields
+
+}
+----
+
+The placeholder `${app.datasource.book-db.schema}` is used for the schema name, and `${app.datasource.book-db.table.books}` is used for the table name.
+
+These placeholders are defined in the `application.yaml` file.
+
+application.yaml - Property Placeholders
+----
+app:
+  datasource:
+    book-db:
+      schema: ${BOOKS_SCHEMA:book_store}
+      table:
+        books: ${BOOKS_TABLE_BOOKS:books}
+----
+
+In the `@Table` annotation, the `schema` and `name` attributes are using property placeholders.
+
+To enable property placeholders in Spring JPA, you need to implement a custom PhysicalNamingStrategy.
+
+For more information on `How to Configure Hibernate Naming Strategy in Spring Boot`, please refer to the link below:
+
+* https://docs.spring.io/spring-boot/how-to/data-access.html#howto.data-access.configure-hibernate-naming-strategy
+
+
+== Custom PhysicalNamingStrategy
+
+For this example, we will create a custom `PhysicalNamingStrategy` class that extends the `CamelCaseToUnderscoresNamingStrategy` class.
+
+.PropertyPlaceholdersNamingStrategy.java
+[source,java]
+----
+package com.alexamy.example.hibernate.naming.component;
+
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
+import org.hibernate.boot.model.naming.Identifier;
+import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
+
+/**
+ * CustomSchemaNaingStrategy
+ *
+ * see https://stackoverflow.com/questions/61760869/spring-jpa-providing-schema-name-dynamically
+ *
+ */
+@Component
+@Slf4j
+public class PropertyPlaceholdersNamingStrategy extends CamelCaseToUnderscoresNamingStrategy implements ApplicationContextAware {
+
+    private Environment environment;
+
+    @PostConstruct
+    public void init() {
+        log.info("=====> CustomSchemaNaingStrategy - init");
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        log.info("=====> CustomSchemaNaingStrategy - setApplicationContext");
+        this.environment = applicationContext.getEnvironment();
+    }
+
+    @Override
+    public Identifier toPhysicalTableName(Identifier logicalName, JdbcEnvironment jdbcEnvironment) {
+        log.info("=====> toPhysicalTableName - logicalName: {}", logicalName);
+        return super.toPhysicalTableName(resolvePlaceholders(logicalName), jdbcEnvironment);
+    }
+
+    @Override
+    public Identifier toPhysicalSchemaName(Identifier logicalName, JdbcEnvironment jdbcEnvironment) {
+        log.info("=====> toPhysicalSchemaName - logicalName: {}", logicalName);
+
+        return super.toPhysicalSchemaName(resolvePlaceholders(logicalName), jdbcEnvironment);
+    }
+
+    private String resolvePlaceholders(String text) {
+        return environment.resolvePlaceholders(text);
+    }
+
+    private Identifier resolvePlaceholders(Identifier identifier) {
+        if(identifier == null) {
+            return null;
+        }
+
+        var resolvedIdentifier = new Identifier(resolvePlaceholders(identifier.getText()), identifier.isQuoted());
+
+        log.info("=====> resolvePlaceholders - identifier: {}, resolvedIdentifier: {}", identifier, resolvedIdentifier);
+
+        return resolvedIdentifier;
+    }
+}
+----
+
+The Spring property placeholders are resolved using the `Environment` class.
+
+Environment is injected into the `PropertyPlaceholdersNamingStrategy` class using the `ApplicationContextAware` interface.
+
+[source,java]
+----
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        log.info("=====> CustomSchemaNaingStrategy - setApplicationContext");
+        this.environment = applicationContext.getEnvironment();
+    }
+----
+
+The `toPhysicalTableName` and `toPhysicalSchemaName` methods resolve the property placeholders using the `resolvePlaceholders` method.
+
+
+== Using HibernateJpaAutoConfiguration (Spring Boot)
+
+If `spring-boot-starter-data-jpa` is included in your project, Spring Boot will automatically configure the `HibernateJpaAutoConfiguration` class.
+
+All you need to do is to configure the `PhysicalNamingStrategy` bean in your Spring Boot application.
+
+When we can configure DataSource and JPA properties in the `application.yaml` file, we can also configure the `PhysicalNamingStrategy` bean.
+
+The property of 'spring.jpa.hibernate.naming.physical-strategy' can be used to configure the `PhysicalNamingStrategy` bean. And the property of 'spring.jpa.properties.hibernate.physical_naming_strategy' can be used interchangeably with the above property.
+
+.application.yaml
+[source,yaml]
+----
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DATALAKE_JDBC_URL:jdbc:postgresql://localhost:5432/datalake}
+    username: ${DATALAKE_DB_USERNAME:}
+    password: ${DATALAKE_DB_PASSWORD:}
+
+  jpa:
+    hibernate:
+      naming:
+        physical-strategy: com.alexamy.example.hibernate.naming.component.PropertyPlaceholdersNamingStrategy
+      ddl-auto: update
+    show-sql: true
+# This can be used interchangeably with the above property
+#    properties:
+#      hibernate.physical_naming_strategy: com.alexamy.example.hibernate.naming.component.PropertyPlaceholdersNamingStrategy
+
+----
+
+
+== Using HibernateJpaVendorAdapter
+
+This section is not required if you are using HibernateJpaAutoConfiguration.
+
+If you need to use JPA against multiple data-sources, you likely need one EntityManagerFactory per datasource. For this, you need to create a custom `EntityManagerFactory` configuration.
+
+In this case, you can configure the `PhysicalNamingStrategy` bean using the `HibernateJpaVendorAdapter` class.
+
+Here is an example of a custom `EntityManagerFactory` configuration:
+
+JpaConfig.java
+[source,java]
+----
+@Configuration
+@EnableJpaRepositories(basePackages = "com.alexamy.example.hibernate.naming.domain.repository"
+        , entityManagerFactoryRef = JpaConfig.ENTITY_MANAGER_FACTORY
+        , transactionManagerRef = JpaConfig.TRANSACTION_MANAGER)
+@EnableTransactionManagement(proxyTargetClass = true)
+@Slf4j
+public class JpaConfig {
+
+    public static final String ENTITY_MANAGER_FACTORY = "booksEntityManagerFactory";
+    public static final String TRANSACTION_MANAGER = "booksTransactionManager";
+
+    @Bean(ENTITY_MANAGER_FACTORY)
+    @Primary
+    public LocalContainerEntityManagerFactoryBean booksEntityManagerFactory(
+            PropertyPlaceholdersNamingStrategy customPhysicalNamingStrategy,
+            DataSource dataSource) {
+
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        vendorAdapter.setGenerateDdl(true);
+
+        LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
+        factory.setJpaVendorAdapter(vendorAdapter);
+        factory.setDataSource(dataSource);
+        factory.setPackagesToScan("com.alexamy.example.hibernate.naming.domain.model");
+
+        factory.getJpaPropertyMap().put("hibernate.physical_naming_strategy", customPhysicalNamingStrategy);
+
+        return factory;
+    }
+
+    @Bean(TRANSACTION_MANAGER)
+    public PlatformTransactionManager transactionManager(
+            @Qualifier(ENTITY_MANAGER_FACTORY) EntityManagerFactory entityManagerFactory) {
+        JpaTransactionManager txManager = new JpaTransactionManager();
+        txManager.setEntityManagerFactory(entityManagerFactory);
+        return txManager;
+    }
+}
+----
+
+The key point is to set the `hibernate.physical_naming_strategy` property in the `LocalContainerEntityManagerFactoryBean` object.
+
+[source,java]
+----
+factory.getJpaPropertyMap().put("hibernate.physical_naming_strategy", customPhysicalNamingStrategy);
+----
+
+For application.yaml file, you need to delete the property of 'spring.jpa.hibernate.naming.physical-strategy' or 'spring.jpa.properties.hibernate.physical_naming_strategy'.
+
+.application.yaml - remove spring.jpa properties
+[source,yaml]
+----
+#  jpa:
+#    hibernate:
+#      naming:
+#        physical-strategy: com.alexamy.example.hibernate.naming.component.PropertyPlaceholdersNamingStrategy
+#      ddl-auto: update
+#    show-sql: true
+## This can be used interchangeably with the above property
+##    properties:
+##      hibernate.physical_naming_strategy: com.alexamy.example.hibernate.naming.component.PropertyPlaceholdersNamingStrategy
+
+----
+
+Ane we also need to exclude the `HibernateJpaAutoConfiguration` class in the `@SpringBootApplication` annotation.
+
+[source,java]
+----
+@SpringBootApplication(
+        exclude = {
+                HibernateJpaAutoConfiguration.class
+        }
+)
+public class HibernatePhysicalNameStrategyExampleApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(HibernatePhysicalNameStrategyExampleApplication.class, args);
+    }
+
+}
+----
+
+
+For more information on how to implement a custom EntityManagerFactory, please refer to the link below:
+
+* https://docs.spring.io/spring-boot/how-to/data-access.html#howto.data-access.use-custom-entity-manager
+* https://docs.spring.io/spring-boot/how-to/data-access.html#howto.data-access.use-multiple-entity-managers

@@ -1,5 +1,6 @@
 package com.alexamy.example.hibernate.naming.config;
 
+import com.alexamy.example.hibernate.naming.component.PropertyPlaceholdersNamingStrategy;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
@@ -18,11 +19,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 import java.util.Properties;
 
-//@Configuration
-//@EnableJpaRepositories(basePackages = "com.alexamy.example.hibernate.naming.domain.repository"
-//        , entityManagerFactoryRef = JpaConfig.ENTITY_MANAGER_FACTORY
-//        , transactionManagerRef = JpaConfig.TRANSACTION_MANAGER)
-//@EnableTransactionManagement(proxyTargetClass = true)
+@Configuration
+@EnableJpaRepositories(basePackages = "com.alexamy.example.hibernate.naming.domain.repository"
+        , entityManagerFactoryRef = JpaConfig.ENTITY_MANAGER_FACTORY
+        , transactionManagerRef = JpaConfig.TRANSACTION_MANAGER)
+@EnableTransactionManagement(proxyTargetClass = true)
 @Slf4j
 public class JpaConfig {
 
@@ -32,7 +33,7 @@ public class JpaConfig {
     @Bean(ENTITY_MANAGER_FACTORY)
     @Primary
     public LocalContainerEntityManagerFactoryBean booksEntityManagerFactory(
-//            CamelCaseToUnderscoresNamingStrategy customSchemaNamePhysicalNamingStrategy,
+            PropertyPlaceholdersNamingStrategy customPhysicalNamingStrategy,
             DataSource dataSource) {
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
@@ -42,7 +43,9 @@ public class JpaConfig {
         factory.setJpaVendorAdapter(vendorAdapter);
         factory.setDataSource(dataSource);
         factory.setPackagesToScan("com.alexamy.example.hibernate.naming.domain.model");
-//        factory.getJpaPropertyMap().put("hibernate.physical_naming_strategy", customSchemaNamePhysicalNamingStrategy);
+
+        factory.getJpaPropertyMap().put("hibernate.physical_naming_strategy", customPhysicalNamingStrategy);
+
         return factory;
     }
 
