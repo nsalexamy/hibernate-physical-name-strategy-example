@@ -273,3 +273,11 @@ For more information on how to implement a custom EntityManagerFactory, please r
 
 * https://docs.spring.io/spring-boot/how-to/data-access.html#howto.data-access.use-custom-entity-manager
 * https://docs.spring.io/spring-boot/how-to/data-access.html#howto.data-access.use-multiple-entity-managers
+
+== Conclusion
+
+In this guide, you learned how to use property placeholders for entity mapping in Spring JPA. You also learned how to implement a custom `PhysicalNamingStrategy` class to resolve property placeholders in entity mapping.
+
+You can find the complete source code for this guide in the link link:https://github.com/nsalexamy/hibernate-physical-name-strategy-example/blob/main/README.adoc[here].
+
+All my LinkedIn articles are available at link:https://www.linkedin.com/pulse/my-linkedin-article-library-young-gyu-kim-2jihc[My LinkedIn Article Library].

@@ -6,4 +6,11 @@ Branches:
 
 - main
 - custom-app-yaml
-- custom-jpa-config
+
+== Documentation
+
+For more details, see the link:./docs/index.adoc[documentation].
+
+To view the documentation, you might need to install 'Asciidoctor' plugin for your browser.
+
+
